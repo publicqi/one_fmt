@@ -13,6 +13,14 @@ The payload has 3 levels: `%n %hn %hhn`
 ## Installation
 
 ```sh
+pip install one_fmt
+```
+
+Or
+
+```sh
+git clone https://github.com/publicqi/one_fmt.git
+cd one_fmt
 python2 setup.py install
 ```
 

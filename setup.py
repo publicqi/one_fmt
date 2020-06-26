@@ -12,10 +12,10 @@ from setuptools import setup
 
 setup(
     name='one_fmt',
-    version='1.0.0',
+    version='1.0.1',
     author='publicqi',
     author_email='qisu@ucsb.edu',
-    url='https://publicki.top/',
+    url='https://github.com/publicqi/one_fmt/',
     description='A module to generate format string exploit shorter than a given length. Currently only supports python2',
     packages=['one_fmt'],
     install_requires=[],
