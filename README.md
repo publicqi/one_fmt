@@ -40,4 +40,4 @@ The payload has 3 levels: `%n %hn %hhn`. For some cases when dealing with a CTF 
 
 ## Test case
 
-You can find a test program in test folder and solve.py. The challenge is written by [@lockshaw](https://github.com/lockshaw). There're a few cases that the address contains `\x0a` therefore SIGSEV. And the challenge doesn't really need arbitrary write as lots addresses are there on the stack. It's just for demoing.
+You can find a test program in test folder and test1.py. The challenge is written by [@lockshaw](https://github.com/lockshaw). There're a few cases that the address contains `\x0a` therefore SIGSEV. And the challenge doesn't really need arbitrary write as lots addresses are there on the stack. It's just for demoing.

