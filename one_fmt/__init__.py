@@ -48,9 +48,6 @@ class Fmt(object):
         # Sort the table in ascending order of value
         to_write = sorted(self.table.items(), key=lambda x: x[1])
 
-        for x in to_write:
-            print hex(x[0]), hex(x[1])
-
         # A list of splitted payload. Concating it is payload.
         to_concat = []
 
@@ -58,7 +55,7 @@ class Fmt(object):
         tmp_offset = self.offset
         tmp_written = self.written
 
-        # Add %n$x and %n specifiers
+        # Add %n$c and %n specifiers
         for kv_target in to_write:
             # If previously printed, calculate num of chars to overflow
             if level == 2:
@@ -68,7 +65,7 @@ class Fmt(object):
             elif level == 0:
                 num_chars_to_write = (kv_target[1] - tmp_written) & (2 ** 8 - 1)
 
-            # If num is not 0, first use %0n$x to pad
+            # If num is not 0, first use %0n$c to pad
             # Else just use %n to write 0
             if num_chars_to_write != 0:
                 print_chars = "{}c".format(num_chars_to_write)
@@ -91,25 +88,25 @@ class Fmt(object):
             tmp_written += num_chars_to_write
 
 
-        # A to_concat[i] now is either %n$x or %n
+        # A to_concat[i] now is either %n$c or %n
         for i in range(len(to_concat)):
             snippet = to_concat[i]
             if level == 2:
                 if "xxxxx" in snippet:
                     # Calculate where the offset of address bytes would be and replace
-                    to_concat[i] = snippet.replace("xxxxx", str(self.offset + len(to_concat)).rjust(5, "0"))
+                    to_concat[i] = snippet.replace("xxxxx", str(self.offset + len("".join(to_concat)) / 8).rjust(5, "0"))
                     # Append the address bytes to the end
                     to_concat.append(p64(to_write[0][0]))
                     # Use the next address in next loop
                     to_write.pop(0)
             elif level == 1:
                 if "xxxx" in snippet:
-                    to_concat[i] = snippet.replace("xxxx", str(self.offset + len(to_concat)).rjust(4, "0"))
+                    to_concat[i] = snippet.replace("xxxx", str(self.offset + len("".join(to_concat)) / 8).rjust(4, "0"))
                     to_concat.append(p64(to_write[0][0]))
                     to_write.pop(0)
             elif level == 0:
                 if "xxx" in snippet:
-                    to_concat[i] = snippet.replace("xxx", str(self.offset + len(to_concat)).rjust(3, "0"))
+                    to_concat[i] = snippet.replace("xxx", str(self.offset + len("".join(to_concat)) / 8).rjust(3, "0"))
                     to_concat.append(p64(to_write[0][0]))
                     to_write.pop(0)
 
