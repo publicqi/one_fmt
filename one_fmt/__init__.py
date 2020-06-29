@@ -83,7 +83,7 @@ class Fmt(object):
         for x in to_write:
             x.append(level)
         if level == 2:
-            return sorted(new_to_write, key=(lambda x: x[1]))
+            return sorted(to_write, key=(lambda x: x[1]))
         while len(to_write) > 0:
             if len(to_write) == 1:
                 tmp_to_write.append(to_write.pop(0))
@@ -121,7 +121,6 @@ class Fmt(object):
         self.table = {}
         # (Re)generate splitted key-value dict
         self.build_table(level)
-
         # Sort the table in ascending order of value
         to_write = sorted(self.table.items(), key=lambda x: x[0])
         to_write = [list(x) for x in to_write]
