@@ -12,7 +12,7 @@ from setuptools import setup
 
 setup(
     name='one_fmt',
-    version='1.0.2',
+    version='1.0.3',
     author='publicqi',
     author_email='qisu@ucsb.edu',
     url='https://github.com/publicqi/one_fmt/',
