@@ -7,7 +7,7 @@ fmt = Fmt(6)
 fmt[elf.symbols["target1"]] = "SUCCESS"
 
 # LEVEL 0
-payload = fmt.build(0)
+payload = fmt.build(0, True)
 print hexdump(payload)
 r = process("./test2", level="error")
 
@@ -17,7 +17,7 @@ success("LEVEL 0 " + r.recvuntil("SUCCESS"))
 r.close()
 
 # LEVEL 1
-payload = fmt.build(1)
+payload = fmt.build(1, True)
 print hexdump(payload)
 r = process("./test2", level="error")
 
@@ -28,7 +28,7 @@ r.close()
 
 # LEVEL 2
 fmt[elf.symbols["target1"]] = "SUCCESS"
-payload = fmt.build(1)
+payload = fmt.build(1, True)
 print hexdump(payload)
 r = process("./test2", level="error")
 

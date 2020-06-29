@@ -58,6 +58,7 @@ class Fmt(object):
     def __setitem__(self, address, val):
         self.targets[address] = val
 
+    # Since new class PercentN is used, we need 2 more functions to apply len() and join()
     def get_length_to_concat(self, concat_list):
         length = 0
         for item in concat_list:
@@ -76,11 +77,14 @@ class Fmt(object):
                 payload += str(item)
         return payload
 
+    def optimize(concat_list):
+        pass
+
     # Build final payload
     # level: 0 => hhn   1 byte
     #        1 => hn    2 bytes
     #        2 => n     4 bytes(deprecated)
-    def build(self, level=0):
+    def build(self, level=0, debug=False):
         # Clean previous table
         self.table = {}
         # (Re)generate splitted key-value dict
@@ -88,6 +92,10 @@ class Fmt(object):
 
         # Sort the table in ascending order of value
         to_write = sorted(self.table.items(), key=lambda x: x[1])
+
+        if debug:
+            for x in to_write:
+                print hex(x[0]), hex(x[1])
 
         # A list of splitted payload. Concating it is payload.
         to_concat = []
