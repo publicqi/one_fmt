@@ -63,5 +63,5 @@ test3 folder is for me to test optimize function, and it worked on my machine XD
 + ~~Add a level of automatically generate an shorter payload on low levels~~
   + ~~For example, if you use level 0 to generate`fmt[0x601050] = p64(0x4142)`, the payload will write to 8 addresses. However, this can be trimmed by write a `%n` to `0x601054` and a `%hn` to `0x601052`.~~
 + Supports Python3 and 32 bits? Will do when I have the need.
-+ ADD COMMENTS TO THE ULGY CODE
++ ~~ADD COMMENTS TO THE ULGY CODE~~
 
