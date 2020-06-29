@@ -68,7 +68,7 @@ class Fmt(object):
             # If num is not 0, first use %0n$x to pad
             # Else just use %n to write 0
             if num_chars_to_write != 0:
-                print_chars = "{}x".format(num_chars_to_write)
+                print_chars = "{}c".format(num_chars_to_write)
                 # Align to 8
                 while (len(print_chars) + 2) % 8 != 0:
                     print_chars = "0" + print_chars
