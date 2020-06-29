@@ -48,6 +48,9 @@ class Fmt(object):
         # Sort the table in ascending order of value
         to_write = sorted(self.table.items(), key=lambda x: x[1])
 
+        for x in to_write:
+            print hex(x[0]), hex(x[1])
+
         # A list of splitted payload. Concating it is payload.
         to_concat = []
 
@@ -151,8 +154,8 @@ class Fmt(object):
                         tmp_content = self.targets[address]
                         tmp_offset = 0
                         while len(tmp_content) > 2:
-                            self.table[address + tmp_offset] = u16(tmp_content[-2:])
-                            tmp_content = tmp_content[:-2]
+                            self.table[address + tmp_offset] = u16(tmp_content[:2])
+                            tmp_content = tmp_content[2:]
                             tmp_offset += 2
                         self.table[address + tmp_offset] = u16(tmp_content.ljust(2, "\x00"))
                     else:
