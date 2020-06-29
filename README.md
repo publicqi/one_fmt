@@ -41,3 +41,11 @@ The payload has 3 levels: `%n %hn %hhn`. For some cases when dealing with a CTF 
 ## Test case
 
 You can find a test program in test folder and test1.py. The challenge is written by [@lockshaw](https://github.com/lockshaw). There're a few cases that the address contains `\x0a` therefore SIGSEV. And the challenge doesn't really need arbitrary write as lots addresses are there on the stack. It's just for demoing.
+
+Another test program `test2` is for me to test cases as well.
+
+## TODO
+
++ Add a level of automatically generate an shorter payload on low levels
+  + For example, if you use level 0 to generate`fmt[0x601050] = p64(0x4142)`, the payload will write to 8 addresses. However, this can be trimmed by write a `%n` to `0x601054` and a `%hn` to `0x601052`.
++ Supports Python3 and 32 bits? Will do when I have the need.
