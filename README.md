@@ -8,7 +8,7 @@ Feel free to add supports and pull requests are welcomed.
 
 Some code of this module is from [Inndy/formatstring-exploit](https://github.com/Inndy/formatstring-exploit). It's better than pwntools, but still it used a a lot of paddings to generalize payloads therefore sometimes not so pleasing.
 
-The payload has 3 levels: `%n %hn %hhn`
+The payload has 3 levels: `%n %hn %hhn`. In version 1.1.0(2974bc4), I added an optimize() function to further reduce payload size. This should be the final version of functions for a while. Enjoy!
 
 ## Installation
 
@@ -44,8 +44,24 @@ You can find a test program in test folder and test1.py. The challenge is writte
 
 Another test program `test2` is for me to test cases as well.
 
+test3 folder is for me to test optimize function, and it worked on my machine XD
+
+## Changelog
+
+1.0.0: First version
+
+1.0.1: Update Pypi project url
+
+1.0.2: Fix typo in setup.py
+
+1.0.3: Fix endianness; Fix %n index bug
+
+1.1.0: Add optimization function; Fix bug
+
 ## TODO
 
-+ Add a level of automatically generate an shorter payload on low levels
-  + For example, if you use level 0 to generate`fmt[0x601050] = p64(0x4142)`, the payload will write to 8 addresses. However, this can be trimmed by write a `%n` to `0x601054` and a `%hn` to `0x601052`.
++ ~~Add a level of automatically generate an shorter payload on low levels~~
+  + ~~For example, if you use level 0 to generate`fmt[0x601050] = p64(0x4142)`, the payload will write to 8 addresses. However, this can be trimmed by write a `%n` to `0x601054` and a `%hn` to `0x601052`.~~
 + Supports Python3 and 32 bits? Will do when I have the need.
++ ADD COMMENTS TO THE ULGY CODE
+
