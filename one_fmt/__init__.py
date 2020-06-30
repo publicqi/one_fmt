@@ -51,7 +51,11 @@ class Fmt(object):
     targets = {}
     # Processed address/value key-value
     table = {}
+
     payload = None
+
+    # Index exists
+    index_exists = {}
 
     def __init__(self, offset=None, written=0):
         self.offset = offset
@@ -60,6 +64,9 @@ class Fmt(object):
     # Stores the raw address and values to self.target
     def __setitem__(self, address, val):
         self.targets[address] = val
+
+    def index(self, address, index):
+        self.index_exists[address] = index
 
     # Since new class PercentN is used, we need 2 more functions to apply len() and join()
 
@@ -200,8 +207,12 @@ class Fmt(object):
             # to_concat[i] is a %n formatter instance
             if type(to_concat[i]) is PercentN:
                 # Index is offset to address(N of %N$n)
-                to_concat[i].index = self.offset + self.get_length_to_concat(to_concat) / 8
-                to_concat.append(p64(to_write.pop(0)[0]))
+                if to_write[0][0] in self.index_exists.keys():
+                    to_concat[i].index = self.index_exists[to_write[0][0]]
+                    to_write.pop(0)
+                else:
+                    to_concat[i].index = self.offset + self.get_length_to_concat(to_concat) / 8
+                    to_concat.append(p64(to_write.pop(0)[0]))
         # Construct the payload
         self.payload = self.concat(to_concat)
         return self.payload
