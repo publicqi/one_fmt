@@ -1,5 +1,5 @@
 # one_fmt
-The goal of this tools is to build payload for format string vulnerability, as fmt_str module from pwntools on 64-bits machines is shitty.
+The goal of this tool is to build payload for format string vulnerability, as fmt_str module from pwntools on 64-bits machines is shitty.
 
 + Supports only python2 for now, as python3 for pwning is awful
 + Supports only 64-bits for now, as I personally rarely encounter 32-bits scenarios nowadays
